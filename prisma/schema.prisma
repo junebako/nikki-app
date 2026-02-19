@@ -96,13 +96,6 @@ model Authenticator {
 // Nikki App ドメインモデル
 // ============================================================
 
-enum BlockType {
-  TEXT
-  IMAGE
-  LINK
-  QUOTE
-}
-
 enum DayStatus {
   DRAFT
   PUBLISHED
@@ -113,21 +106,9 @@ model Block {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // コンテンツタイプ (STI)
-  type    BlockType
-  content String?
-
-  // IMAGE 用
-  imageUrl     String?
-  imageCaption String?
-  imageWidth   Int?
-  imageHeight  Int?
-
-  // LINK 用
-  linkUrl         String?
-  linkTitle       String?
-  linkDescription String?
-  linkImageUrl    String?
+  // ポリモーフィック関連: BlockText, BlockImage, BlockLink, BlockQuote
+  blockElementType String
+  blockElementId   String
 
   // Day への所属
   dayId    String?
@@ -147,11 +128,68 @@ model Block {
   deletedAt DateTime?
 
   @@index([userId])
+  @@index([blockElementType, blockElementId])
   @@index([dayId, position])
   @@index([reblockSourceId])
   @@index([createdAt])
   @@map("blocks")
 }
+
+// ============================================================
+// Block Element タイプ別モデル
+// ============================================================
+
+model BlockText {
+  id   String @id @default(cuid())
+  text String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("block_texts")
+}
+
+model BlockImage {
+  id      String  @id @default(cuid())
+  url     String
+  caption String?
+  width   Int?
+  height  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("block_images")
+}
+
+model BlockLink {
+  id               String  @id @default(cuid())
+  url              String
+  caption          String?
+  previewTitle       String?
+  previewDescription String?
+  previewImageUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("block_links")
+}
+
+model BlockQuote {
+  id     String  @id @default(cuid())
+  text   String
+  source String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("block_quotes")
+}
+
+// ============================================================
+// Day & Hashtag
+// ============================================================
 
 model Day {
   id     String @id @default(cuid())
