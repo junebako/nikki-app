@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Auth.js 必須モデル
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Nikki App 固有フィールド
+  userName    String  @unique
+  displayName String?
+  bio         String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Auth.js リレーション
+  accounts       Account[]
+  sessions       Session[]
+  authenticators Authenticator[]
+
+  // Nikki App リレーション
+  blocks Block[]
+  days   Day[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+  @@map("authenticators")
+}
+
+// ============================================================
+// Nikki App ドメインモデル
+// ============================================================
+
+enum BlockType {
+  TEXT
+  IMAGE
+  LINK
+  QUOTE
+}
+
+enum DayStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Block {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // コンテンツタイプ (STI)
+  type    BlockType
+  content String?
+
+  // IMAGE 用
+  imageUrl     String?
+  imageCaption String?
+  imageWidth   Int?
+  imageHeight  Int?
+
+  // LINK 用
+  linkUrl         String?
+  linkTitle       String?
+  linkDescription String?
+  linkImageUrl    String?
+
+  // Day への所属
+  dayId    String?
+  day      Day?    @relation(fields: [dayId], references: [id], onDelete: SetNull)
+  position Int     @default(0)
+
+  // Reblock（自己参照）
+  reblockSourceId String?
+  reblockSource   Block?  @relation("Reblock", fields: [reblockSourceId], references: [id], onDelete: SetNull)
+  reblocks        Block[] @relation("Reblock")
+
+  // Hashtag（多対多）
+  hashtags Hashtag[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([dayId, position])
+  @@index([reblockSourceId])
+  @@index([createdAt])
+  @@map("blocks")
+}
+
+model Day {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date        DateTime  @db.Date
+  status      DayStatus @default(DRAFT)
+  publishedAt DateTime?
+  title       String?
+
+  blocks Block[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([userId, date])
+  @@index([status, publishedAt])
+  @@map("days")
+}
+
+model Hashtag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  blocks Block[]
+
+  createdAt DateTime @default(now())
+
+  @@map("hashtags")
+}

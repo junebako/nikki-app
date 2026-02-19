@@ -29,4 +29,5 @@
 | デプロイ | Vercel | 無料枠で運用 |
 | データベース | Neon (Postgres) | サーバーレスPostgres、無料枠0.5GB、超過時は$15/mo〜 |
 | 画像ストレージ | Cloudflare R2 | S3互換、帯域無料、無料枠10GB |
+| ORM | Prisma | Neonアダプター使用 |
 | 認証 | Auth.js (NextAuth) | |
