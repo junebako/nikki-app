@@ -33,7 +33,7 @@ model User {
   authenticators Authenticator[]
 
   // Nikki App リレーション
-  blocks Block[]
+  pieces Piece[]
   days   Day[]
 
   @@map("users")
@@ -101,90 +101,32 @@ enum DayStatus {
   PUBLISHED
 }
 
-model Block {
+model Piece {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // ポリモーフィック関連: BlockText, BlockImage, BlockLink, BlockQuote
-  blockElementType String
-  blockElementId   String
+  text String
 
-  // Day への所属
+  // Day への所属（後で束ねる）
   dayId    String?
   day      Day?    @relation(fields: [dayId], references: [id], onDelete: SetNull)
   position Int     @default(0)
 
-  // Reblock（自己参照）
-  reblockSourceId String?
-  reblockSource   Block?  @relation("Reblock", fields: [reblockSourceId], references: [id], onDelete: SetNull)
-  reblocks        Block[] @relation("Reblock")
-
-  // Hashtag（多対多）
-  hashtags Hashtag[]
+  // 引用元（自己参照）
+  originalPieceId String?
+  originalPiece   Piece?  @relation("PieceOrigin", fields: [originalPieceId], references: [id], onDelete: SetNull)
+  derivedPieces   Piece[] @relation("PieceOrigin")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([userId])
-  @@index([blockElementType, blockElementId])
   @@index([dayId, position])
-  @@index([reblockSourceId])
+  @@index([originalPieceId])
   @@index([createdAt])
-  @@map("blocks")
-}
-
-// ============================================================
-// Block Element タイプ別モデル
-// ============================================================
-
-model BlockText {
-  id   String @id @default(cuid())
-  text String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("block_texts")
-}
-
-model BlockImage {
-  id      String  @id @default(cuid())
-  url     String
-  caption String?
-  width   Int?
-  height  Int?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("block_images")
-}
-
-model BlockLink {
-  id               String  @id @default(cuid())
-  url              String
-  caption          String?
-  previewTitle       String?
-  previewDescription String?
-  previewImageUrl    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("block_links")
-}
-
-model BlockQuote {
-  id     String  @id @default(cuid())
-  text   String
-  source String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("block_quotes")
+  @@map("pieces")
 }
 
 // ============================================================
@@ -201,7 +143,7 @@ model Day {
   publishedAt DateTime?
   title       String?
 
-  blocks Block[]
+  pieces Piece[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -215,8 +157,6 @@ model Day {
 model Hashtag {
   id   String @id @default(cuid())
   name String @unique
-
-  blocks Block[]
 
   createdAt DateTime @default(now())
 

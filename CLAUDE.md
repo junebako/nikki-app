@@ -38,12 +38,11 @@ npx prisma studio     # DB管理GUI
 
 ## DB設計のポイント
 
-- **Block のコンテンツタイプ**: ポリモーフィック関連方式（`blockElementType` + `blockElementId`）
-  - タイプ別テーブル: BlockText, BlockImage, BlockLink, BlockQuote
-  - 以前の Rails 版 (`~/ghq/src/github.com/junebako/day_by_block`) と同じ設計方針
-- **Block → Day**: `dayId` nullable。作成直後は Day に属さず、後で束ねる
+- **Piece**: 投稿の最小単位。1モデル + `text` カラム（Markdown）にシンプル一本化
+  - 以前の Block（ポリモーフィック関連方式）を廃止し Piece に統一
+- **Piece → Day**: `dayId` nullable。作成直後は Day に属さず、後で束ねる
 - **Day**: `@@unique([userId, date])` で 1ユーザー・1日・1Day を強制
-- **Reblock**: Block の自己参照（`reblockSourceId`）
+- **Piece の自己参照**: `originalPieceId` で引用元を辿れる
 - **userName**: optional。初回ログイン時に cuid で自動生成
 
 ## Prisma の注意点
