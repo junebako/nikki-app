@@ -19,7 +19,7 @@ model User {
   image         String?
 
   // Nikki App 固有フィールド
-  userName    String  @unique
+  userName    String? @unique
   displayName String?
   bio         String?
 
