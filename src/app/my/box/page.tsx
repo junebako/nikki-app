@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { APP_TIMEZONE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createPiece } from "./actions";
@@ -65,7 +66,7 @@ export default async function BoxPage() {
                   className="mt-2 block text-xs text-zinc-400 dark:text-zinc-500"
                 >
                   {piece.createdAt.toLocaleString("ja-JP", {
-                    timeZone: "Asia/Tokyo",
+                    timeZone: APP_TIMEZONE,
                   })}
                 </time>
               </li>
